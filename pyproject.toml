@@ -1,0 +1,9 @@
+[project]
+name = "maxbot"
+version = "1.0.0"
+description = "Школьный бот-помощник для мессенджера MAX"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
