@@ -9,6 +9,7 @@ def main_menu() -> dict:
         [btn.callback("📅 Расписание", "menu:schedule"), btn.callback("🔔 Звонки", "menu:bells")],
         [btn.callback("📝 Домашка", "menu:homework"), btn.callback("🎯 Оценки", "menu:grades")],
         [btn.callback("⏰ Контрольные", "menu:events"), btn.callback("⚙️ Настройки", "menu:settings")],
+        [btn.callback("🤖 ИИ-помощник", "menu:ai")],
         [btn.callback("❓ Помощь", "menu:help")],
     )
 
@@ -90,6 +91,36 @@ def events_list_keyboard(ids: list[int]) -> dict:
     rows = [[btn.callback(f"🗑 Удалить #{eid}", f"ev:del:{eid}")] for eid in ids]
     rows.append([btn.callback("➕ Добавить", "ev:add"), btn.callback("⬅️ Меню", "menu:root")])
     return btn.keyboard(*rows)
+
+
+def ai_menu() -> dict:
+    return btn.keyboard(
+        [btn.callback("💬 Спросить", "ai:ask"), btn.callback("🧠 Тест по теме", "ai:quiz")],
+        [btn.callback("✅ Проверить работу", "ai:check"), btn.callback("🔎 Найти в материалах", "ai:find")],
+        [btn.callback("⬅️ Меню", "menu:root")],
+    )
+
+
+def ai_again(action: str) -> dict:
+    return btn.keyboard(
+        [btn.callback("🔁 Ещё раз", f"ai:{action}")],
+        [btn.callback("🤖 ИИ-помощник", "menu:ai"), btn.callback("⬅️ Меню", "menu:root")],
+    )
+
+
+def quiz_options(options: list[str]) -> dict:
+    letters = "АБВГДЕЖ"
+    rows = [
+        [btn.callback(f"{letters[i]}. {text}"[:60], f"quiz:answer:{i}")]
+        for i, text in enumerate(options)
+    ]
+    rows.append([btn.callback("🛑 Закончить", "quiz:stop")])
+    return btn.keyboard(*rows)
+
+
+def quiz_next(last: bool) -> dict:
+    label = "🏁 Итоги" if last else "➡️ Дальше"
+    return btn.keyboard([btn.callback(label, "quiz:next")], [btn.callback("🛑 Закончить", "quiz:stop")])
 
 
 def settings_menu(digest_enabled: bool) -> dict:

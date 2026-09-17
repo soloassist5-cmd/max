@@ -64,6 +64,16 @@ class Config:
     poll_timeout: int = 30
     poll_limit: int = 100
 
+    gigachat_auth_key: str = ""
+    gigachat_scope: str = "GIGACHAT_API_PERS"
+    gigachat_model: str = "GigaChat"
+    gigachat_ca_bundle: str | None = None
+    gigachat_verify_ssl: bool = True
+
+    @property
+    def ai_enabled(self) -> bool:
+        return bool(self.gigachat_auth_key)
+
     @classmethod
     def from_env(cls, *, dotenv: str | Path = ".env") -> "Config":
         load_dotenv(dotenv)
@@ -93,6 +103,12 @@ class Config:
             reminders_enabled=_env_bool("MAX_REMINDERS", True),
             poll_timeout=_env_int("MAX_POLL_TIMEOUT", 30),
             poll_limit=_env_int("MAX_POLL_LIMIT", 100),
+            gigachat_auth_key=os.getenv("GIGACHAT_AUTH_KEY", "").strip(),
+            gigachat_scope=os.getenv("GIGACHAT_SCOPE", "GIGACHAT_API_PERS").strip(),
+            gigachat_model=os.getenv("GIGACHAT_MODEL", "GigaChat").strip(),
+            # сертификат Минцифры нужен обоим сервисам, поэтому по умолчанию берём тот же
+            gigachat_ca_bundle=os.getenv("GIGACHAT_CA_BUNDLE") or os.getenv("MAX_CA_BUNDLE") or None,
+            gigachat_verify_ssl=_env_bool("GIGACHAT_VERIFY_SSL", True),
         )
         if config.mode == "webhook" and not config.webhook_url:
             raise ConfigError("Для MAX_MODE=webhook нужен MAX_WEBHOOK_URL (https)")

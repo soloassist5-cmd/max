@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Any
 
+from ..ai import Assistant
 from ..api.client import MaxClient
 from ..api.types import MESSAGE_CALLBACK, Update, User
 from ..config import Config
@@ -21,6 +22,7 @@ class Context:
     chat_id: int
     reply_kind: str  # "chat_id" либо "user_id"
     tz_offset: int
+    ai: Assistant
 
     @property
     def user_id(self) -> int | None:
