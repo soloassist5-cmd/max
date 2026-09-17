@@ -1,0 +1,25 @@
+[Unit]
+Description=Школьный бот-помощник для MAX
+After=network-online.target
+Wants=network-online.target
+# если бот падает из-за неверного токена, перестаём перезапускать после пяти попыток
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=maxbot
+WorkingDirectory=/opt/maxbot
+# переменные бот читает сам из /opt/maxbot/.env
+ExecStart=/opt/maxbot/.venv/bin/python -m maxbot
+Restart=on-failure
+RestartSec=10
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/maxbot
+
+[Install]
+WantedBy=multi-user.target

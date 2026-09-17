@@ -75,6 +75,30 @@ tests/        pytest
 самоподписанный сертификат; если сертификат Минцифры не установлен в
 системное хранилище, укажите путь к нему в `MAX_CA_BUNDLE`.
 
+Запускать нужно из корня проекта: оттуда бот читает `.env` и находит пакет
+`maxbot`. На старте он проверяет токен запросом `GET /me` и, если токен неверный,
+сразу останавливается с понятным сообщением, а не уходит в бесконечные попытки.
+
+## Запуск на сервере
+
+Docker:
+
+```
+cp .env.example .env   # вписать токены
+docker compose up -d
+docker compose logs -f
+```
+
+systemd (бот лежит в `/opt/maxbot`, виртуальное окружение — в `/opt/maxbot/.venv`):
+
+```
+sudo useradd --system --home /opt/maxbot maxbot
+sudo cp deploy/maxbot.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now maxbot
+journalctl -u maxbot -f
+```
+
 ## Тесты
 
 ```

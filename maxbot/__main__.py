@@ -38,12 +38,17 @@ async def _run(config: Config) -> None:
     else:
         tasks.append(asyncio.create_task(app.run_polling()))
 
+    stopper = asyncio.create_task(stop_event.wait())
     try:
-        await stop_event.wait()
+        # выходим и по сигналу, и если рабочая задача упала — иначе процесс повиснет живым, но глухим
+        done, _ = await asyncio.wait([*tasks, stopper], return_when=asyncio.FIRST_COMPLETED)
+        for task in done:
+            if task is not stopper and not task.cancelled() and task.exception() is not None:
+                raise task.exception()
     finally:
-        for task in tasks:
+        for task in (*tasks, stopper):
             task.cancel()
-        await asyncio.gather(*tasks, return_exceptions=True)
+        await asyncio.gather(*tasks, stopper, return_exceptions=True)
         await app.stop()
 
 
@@ -51,11 +56,10 @@ def main() -> None:
     _setup_logging()
     try:
         config = Config.from_env()
+        asyncio.run(_run(config))
     except ConfigError as exc:
         print(f"Ошибка конфигурации: {exc}", file=sys.stderr)
         raise SystemExit(1)
-    try:
-        asyncio.run(_run(config))
     except KeyboardInterrupt:
         pass
 

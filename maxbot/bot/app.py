@@ -6,8 +6,9 @@ import logging
 from ..ai import Assistant
 from ..ai.gigachat import GigaChatClient
 from ..api.client import MaxClient
+from ..api.errors import MaxApiError, MaxNetworkError
 from ..api.types import Update
-from ..config import Config
+from ..config import Config, ConfigError
 from ..storage import Storage
 from .context import Context
 from .handlers import ai as ai_handlers
@@ -57,12 +58,30 @@ class App:
     async def start(self) -> None:
         await self.client.start()
         await self.storage.connect()
+        await self.check_token()
         if not self.ai.enabled:
             log.warning("GIGACHAT_AUTH_KEY не задан — ИИ-функции будут отключены")
         try:
             await self.client.set_commands(BOT_COMMANDS)
         except Exception:
             log.exception("не удалось обновить список команд бота")
+
+    async def check_token(self) -> None:
+        """Проверяет токен до запуска: с неверным токеном бот не должен молча крутиться."""
+        try:
+            info = await self.client.get_me()
+        except MaxApiError as exc:
+            if exc.is_auth_error:
+                raise ConfigError(
+                    "MAX_BOT_TOKEN отклонён сервером MAX. Проверьте, что скопировали токен "
+                    "целиком и из настроек нужного бота."
+                ) from exc
+            log.warning("не удалось получить данные бота: %s", exc)
+            return
+        except MaxNetworkError as exc:
+            log.warning("MAX API сейчас недоступен (%s), продолжаем запуск", exc)
+            return
+        log.info("токен принят: бот «%s» (@%s)", info.name, info.username or "без никнейма")
 
     async def stop(self) -> None:
         await self.ai.close()
@@ -106,6 +125,12 @@ class App:
                 updates, marker = await self.client.get_updates(
                     marker=marker, limit=self.config.poll_limit, timeout=self.config.poll_timeout,
                 )
+            except MaxApiError as exc:
+                if exc.is_auth_error:
+                    raise ConfigError("MAX_BOT_TOKEN больше не действует — бот остановлен.") from exc
+                log.exception("ошибка long polling, повтор через 5 секунд")
+                await asyncio.sleep(5)
+                continue
             except Exception:
                 log.exception("ошибка long polling, повтор через 5 секунд")
                 await asyncio.sleep(5)
